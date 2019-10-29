@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/guonaihong/gutil/file"
 	"github.com/oraleval/ulog"
 	"io"
+	"os"
 )
 
 func main() {
@@ -21,15 +23,17 @@ func main() {
 
 	flag.Parse()
 
-	var w []io.Writer
-	if size, err := file.ParseSize(*maxSize); err != nil {
-		log2.Errorf("Invalid value -max-size %s, %s\n", *maxSize, err)
-	} else {
+	w := []io.Writer{os.Stdout}
+	if *save {
+		if size, err := file.ParseSize(*maxSize); err != nil {
+			fmt.Errorf("Invalid value -max-size %s, %s\n", *maxSize, err)
+		} else {
 
-		// 需要保证声明周期比较长
-		file := log.NewFile(*prefix, *dir, log.Gzip, int(size), *maxArchive)
-		w = append(w, io.Writer(file))
-		defer file.Close()
+			// 需要保证声明周期比较长
+			file := ulog.NewFile(*prefix, *dir, ulog.Gzip, int(size), *maxArchive)
+			w = append(w, io.Writer(file))
+			defer file.Close()
+		}
 	}
 
 	u := ulog.New(w...)
