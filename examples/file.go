@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/guonaihong/gutil/file"
 	"github.com/oraleval/ulog"
-	"io"
 	"os"
 )
 
@@ -23,7 +22,7 @@ func main() {
 
 	flag.Parse()
 
-	w := []io.Writer{os.Stdout}
+	w := []ulog.Option{ulog.AddWriter(os.Stdout), ulog.HostName("test host name"), ulog.ServerName("test server name")}
 	if *save {
 		if size, err := file.ParseSize(*maxSize); err != nil {
 			fmt.Errorf("Invalid value -max-size %s, %s\n", *maxSize, err)
@@ -31,7 +30,7 @@ func main() {
 
 			// 需要保证声明周期比较长
 			file := ulog.NewFile(*prefix, *dir, ulog.Gzip, int(size), *maxArchive)
-			w = append(w, io.Writer(file))
+			w = append(w, ulog.AddWriter(file))
 			defer file.Close()
 		}
 	}
