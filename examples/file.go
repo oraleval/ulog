@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/oraleval/ulog"
 	"io"
-	"oraleval/ulog"
 )
 
 func main() {

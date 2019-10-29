@@ -2,6 +2,7 @@ package ulog
 
 import (
 	"github.com/rs/zerolog"
+	"io"
 	//"github.com/rs/zerolog/log"
 )
 
