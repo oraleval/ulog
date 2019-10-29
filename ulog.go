@@ -11,7 +11,7 @@ type Ulog struct {
 }
 
 func New(w ...io.Writer) *Ulog {
-	return &Ulog{Logger: zerolog.New(io.MultiWriter(w...)).With().Logger()}
+	return &Ulog{Logger: zerolog.New(io.MultiWriter(w...)).With().Timestamp().Logger()}
 }
 
 func (u *Ulog) Debug() *event {
@@ -36,4 +36,8 @@ type event struct {
 
 func (e *event) ID(id string) *event {
 	return &event{e.Str("ID", id)}
+}
+
+func (e *event) IP(ip string) *event {
+	return &event{e.Str("IP", ip)}
 }

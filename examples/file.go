@@ -38,5 +38,5 @@ func main() {
 
 	u := ulog.New(w...)
 
-	u.Debug().ID("request-id").Msg("hello")
+	u.Debug().ID("request-id").IP("127.0.0.1:8080").Msg("hello")
 }
