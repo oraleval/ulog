@@ -1,8 +1,10 @@
 package ulog
 
 import (
+	"fmt"
 	"github.com/rs/zerolog"
 	"io"
+	"runtime"
 	//"github.com/rs/zerolog/log"
 )
 
@@ -34,8 +36,18 @@ func (u *Ulog) Warn() *event {
 	return &event{u.Logger.Warn()}
 }
 
-func (u *Ulog) Error() *event {
-	return &event{u.Logger.Error()}
+func (u *Ulog) Error(skip ...int) *event {
+	s := 1
+	if len(skip) > 0 {
+		s = skip[0] + 1
+	}
+
+	_, file, line, ok := runtime.Caller(s)
+	if !ok {
+		return &event{u.Logger.Error()}
+	}
+
+	return &event{u.Logger.Error().Str("stack", fmt.Sprintf("%s:%d", file, line))}
 }
 
 type event struct {

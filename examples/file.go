@@ -9,6 +9,10 @@ import (
 	"os"
 )
 
+func myError(u *ulog.Ulog) {
+	u.Error(1).ID("request-id").Msg("聚合错误函数，测试跳过当前调用栈功能")
+}
+
 func main() {
 	//压缩文件前缀,
 	prefix := flag.String("prefix", "ws-eval" /*根据不同的项目修改这里*/, "eval log file prefix")
@@ -39,4 +43,7 @@ func main() {
 	u := ulog.New(w...)
 
 	u.Debug().ID("request-id").IP("127.0.0.1:8080").Msg("hello")
+	u.Error().ID("request-id").IP("127.0.0.1:8080").Msg("test error")
+	u.Warn().Caller().Msg("test warn")
+	myError(u)
 }
