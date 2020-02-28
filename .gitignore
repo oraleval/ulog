@@ -6,6 +6,9 @@
 *.dll
 *.so
 *.dylib
+mylog
+test-log/
+test-test-my.log
 
 # Test binary, build with `go test -c`
 *.test
