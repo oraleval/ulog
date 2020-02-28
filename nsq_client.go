@@ -28,13 +28,17 @@ type nsqClient struct {
 }
 
 // nsq客户端初始化函数
-func NewNsqClient(topic, channel string) *nsqClient {
-	return &nsqClient{
-		topic:       topic,
-		channel:     channel,
-		message:     make(chan []byte, 10000),
-		nsqNodeAddr: make([]unsafe.Pointer, 10), // 默认最多10个nsqd
+func NewNsqClient(topic, channel, nsqLookupAddr string) *nsqClient {
+	n := &nsqClient{
+		topic:         topic,
+		channel:       channel,
+		nsqLookupAddr: nsqLookupAddr,
+		message:       make(chan []byte, 10000),
+		nsqNodeAddr:   make([]unsafe.Pointer, 10), // 默认最多10个nsqd
 	}
+
+	go n.poll()
+	return n
 }
 
 // write接口
@@ -57,12 +61,12 @@ func (q *nsqClient) getNsqdAddr() ([]string, error) {
 		return nil, err
 	}
 
-	if len(p.Node) == 0 {
+	if len(p.Producers) == 0 {
 		return nil, errors.New("Node not found")
 	}
 
-	nodes := make([]string, len(p.Node))
-	for k, n := range p.Node {
+	nodes := make([]string, len(p.Producers))
+	for k, n := range p.Producers {
 		a := strings.Split(n.Remote_address, ":")
 		nodes[k] = fmt.Sprintf("%s:%d", a[0], n.Tcp_port)
 	}
@@ -214,8 +218,10 @@ func (q *nsqClient) poll() {
 				if p != nil {
 					err := p.Publish(q.topic, m)
 					if err == nil {
+						// 成功写入
 						continue
 					}
+
 					p.Stop()
 					atomic.SwapPointer(&q.nsqNodeAddr[index], nil)
 					log.Printf("write nsq fail:%s\n", p)
@@ -250,7 +256,7 @@ func NewNsqNode(q *nsqClient, addr string) (*nsqNode, error) {
 
 // 解析nsqd的地址列表
 type producers struct {
-	Node []node
+	Producers []node `json:"producers"`
 }
 
 type node struct {
