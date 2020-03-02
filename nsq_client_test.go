@@ -8,11 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"unsafe"
 )
 
+// 先创建topic 和 channel
 // curl -X POST http://192.168.6.100:4151/topic/create?topic=my-test-topic
 // curl -X POST 'http://192.168.6.100:4151/channel/create?topic=my-test-topic&channel=my-test-channel'
-
 const nsqLookUpAddr = "192.168.6.100:4161"
 
 type myMessageHandler struct {
@@ -52,7 +53,7 @@ func nsqMockServer(ctx context.Context, out chan []byte) error {
 
 	// Use nsqlookupd to discover nsqd instances.
 	// See also ConnectToNSQD, ConnectToNSQDs, ConnectToNSQLookupds.
-	err = consumer.ConnectToNSQLookupd("192.168.6.100:4161")
+	err = consumer.ConnectToNSQLookupd(nsqLookUpAddr)
 	if err != nil {
 		return err
 	}
@@ -115,6 +116,58 @@ func TestNsqClient_Write(t *testing.T) {
 	assert.Equal(t, len(need), readNumber)
 }
 
+func NewNsqClientTest(topic, channel, nsqLookupAddr string) *nsqClient {
+	n := &nsqClient{
+		topic:         topic,
+		channel:       channel,
+		nsqLookupAddr: nsqLookupAddr,
+		message:       make(chan []byte, 10000),
+		nsqNodeAddr:   make([]unsafe.Pointer, 10), // 默认最多10个nsqd
+	}
+	return n
+}
+
 // 测试动态增加节点
+// 测试过程:
+// docker 新加一个nsqd节点
+// 观察节点数有没有变多
+func TestNsqClient_Add(t *testing.T) {
+	c := NewNsqClientTest("my-test-topic", "my-test-channel", nsqLookUpAddr)
+	c.initNsqNode()
+	oldN := c.curMaxIndex
+	c.updateNsqdAddr(true)
+	newN := c.curMaxIndex
+	assert.NotEqual(t, oldN, newN)
+	fmt.Printf("old nsq number(%d), new nsq number(%d)\n", oldN, newN)
+}
 
 // 测试删减节点
+// 测试过程:
+// docker 关闭一个nsqd节点
+// 观察节点数有没有变多
+func countAddr(nsqNodeAddr []unsafe.Pointer) (count int) {
+	for _, v := range nsqNodeAddr {
+		if v != nil {
+			count++
+		}
+	}
+	return
+}
+
+func TestNsqClient_Del(t *testing.T) {
+	c := NewNsqClientTest("my-test-topic", "my-test-channel", nsqLookUpAddr)
+	go c.poll()
+	time.Sleep(time.Second)
+	oldN := countAddr(c.nsqNodeAddr)
+	fmt.Printf("stop nsqd\n")
+	time.Sleep(time.Second * 10) //手动用docker新增一台nsqd节点
+	for i := 0; i < 100; i++ {
+		_, err := c.Write([]byte(fmt.Sprintf("hello%d", i)))
+		assert.NoError(t, err)
+	}
+
+	time.Sleep(time.Second * 10)
+	newN := countAddr(c.nsqNodeAddr)
+	fmt.Printf("old nsq number(%d), new nsq number(%d)\n", oldN, newN)
+	assert.NotEqual(t, oldN, newN)
+}

@@ -7,7 +7,6 @@ import (
 	"github.com/nsqio/go-nsq"
 	"io"
 	"log"
-	"math/rand"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -25,6 +24,7 @@ type nsqClient struct {
 
 	nsqNodeAddr []unsafe.Pointer
 	curMaxIndex int32
+	id          int64
 }
 
 // nsq客户端初始化函数
@@ -75,7 +75,9 @@ func (q *nsqClient) getNsqdAddr() ([]string, error) {
 }
 
 // 更新nsqNode数组，如果nsqd地址有更新的,会直接动态扩容
-func (q *nsqClient) updateNsqdAddr() {
+// 目前updateNsqdAddr做了新增nsqd节点功能
+// nsqd节点收缩功能放到poll函数里面，当写入失败，就会删除响应的nsqd节点
+func (q *nsqClient) updateNsqdAddr(once bool) {
 
 	for {
 
@@ -87,11 +89,16 @@ func (q *nsqClient) updateNsqdAddr() {
 		}
 
 		var newAddr []unsafe.Pointer
+		// 从nsqlookup得到的nsqd列表
 		for _, a := range addrs {
 			found := false
-			for j := range q.nsqNodeAddr {
+			for j := int32(0); j < q.curMaxIndex; j++ {
 				v := atomic.LoadPointer(&q.nsqNodeAddr[j])
 				c := (*nsqNode)(v)
+				if c == nil {
+					continue
+				}
+
 				if c.addr == a {
 					found = true
 				}
@@ -108,14 +115,22 @@ func (q *nsqClient) updateNsqdAddr() {
 			}
 		}
 
-		for _, v := range newAddr {
-			if !q.setNodeAddr(v) {
-				log.Printf("set nsq node fail:%v\n", (*nsqNode)(v))
+		// 处理新增
+		if len(newAddr) > 0 {
+			for _, v := range newAddr {
+				if !q.setNodeAddr(v) {
+					log.Printf("set nsq node fail:%v\n", (*nsqNode)(v))
+				}
 			}
+
+			atomic.AddInt32(&q.curMaxIndex, int32(len(newAddr)))
 		}
 
 		log.Printf("nsqd address:%v\n", addrs)
 		//atomic.StorePointer(&q.nsqNodeAddr, unsafe.Pointer(&addrs))
+		if once { //此判断用于测试
+			break
+		}
 	}
 }
 
@@ -184,12 +199,13 @@ func (q *nsqClient) initNsqNode() {
 }
 
 func (q *nsqClient) getProducer(index *int) *nsq.Producer {
-	rnd := rand.New(rand.NewSource(time.Now().Unix()))
-	idx := rnd.Intn(int(atomic.LoadInt32(&q.curMaxIndex)))
 
 	var v unsafe.Pointer
+	var idx int64
 	// 最多重试100次
 	for i := 0; i < 100; i++ {
+		curMaxIndex := atomic.LoadInt32(&q.curMaxIndex)
+		idx = atomic.AddInt64(&q.id, 1) % int64(curMaxIndex)
 		v = atomic.LoadPointer(&q.nsqNodeAddr[idx])
 		if v != nil {
 			break
@@ -199,6 +215,7 @@ func (q *nsqClient) getProducer(index *int) *nsq.Producer {
 		return nil
 	}
 
+	*index = int(idx)
 	c := (*nsqNode)(v)
 	return c.Producer
 }
@@ -206,7 +223,7 @@ func (q *nsqClient) getProducer(index *int) *nsq.Producer {
 func (q *nsqClient) poll() {
 
 	q.initNsqNode()
-	go q.updateNsqdAddr()
+	go q.updateNsqdAddr(false)
 	// 默认起4个go程
 	for i := 0; i < 4; i++ {
 		go func() {
