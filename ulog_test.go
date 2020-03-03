@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -27,4 +28,16 @@ func TestUlog_ID(t *testing.T) {
 	err := json.Unmarshal(out.Bytes(), &got)
 	assert.NoError(t, err)
 	assert.Equal(t, need, got)
+}
+
+// 子日志功能example
+func Test_sublogger(t *testing.T) {
+	l := New(AddWriter(os.Stdout))
+
+	l.SetLevel("info")
+
+	l2 := l.With().Str("hostName", "bj01").Str("serverName", "eval01").Logger()
+	l2.Error().Msg("print error")
+	l2.Info().Msg("print info")
+	l2.Debug().Msg("print debug")
 }

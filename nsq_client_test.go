@@ -141,10 +141,7 @@ func TestNsqClient_Add(t *testing.T) {
 	fmt.Printf("old nsq number(%d), new nsq number(%d)\n", oldN, newN)
 }
 
-// 测试删减节点
-// 测试过程:
-// docker 关闭一个nsqd节点
-// 观察节点数有没有变多
+// 统计nsqd　节点个数
 func countAddr(nsqNodeAddr []unsafe.Pointer) (count int) {
 	for _, v := range nsqNodeAddr {
 		if v != nil {
@@ -154,10 +151,14 @@ func countAddr(nsqNodeAddr []unsafe.Pointer) (count int) {
 	return
 }
 
+// 测试删减节点
+// 测试过程:
+// docker 关闭一个nsqd节点
+// 观察节点数有没有变多
 func TestNsqClient_Del(t *testing.T) {
 	c := NewNsqClientTest("my-test-topic", "my-test-channel", nsqLookUpAddr)
 	go c.poll()
-	time.Sleep(time.Second)
+	time.Sleep(time.Second) //确保这时候nsqNodeAddr有值
 	oldN := countAddr(c.nsqNodeAddr)
 	fmt.Printf("stop nsqd\n")
 	time.Sleep(time.Second * 10) //手动用docker新增一台nsqd节点
@@ -166,7 +167,7 @@ func TestNsqClient_Del(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 10) // 等待write删除挂掉的nsq节点
 	newN := countAddr(c.nsqNodeAddr)
 	fmt.Printf("old nsq number(%d), new nsq number(%d)\n", oldN, newN)
 	assert.NotEqual(t, oldN, newN)

@@ -12,6 +12,7 @@ type Ulog struct {
 	zerolog.Logger
 }
 
+// 初始化函数
 func New(o ...Option) *Ulog {
 	options := uOptions{}
 	for _, opt := range o {
@@ -22,6 +23,17 @@ func New(o ...Option) *Ulog {
 		Str("hostName", options.hostName).
 		Str("serverName", options.serverName).
 		Logger()}
+}
+
+// 设置日志等级
+func (u *Ulog) SetLevel(level string) *Ulog {
+	l, err := zerolog.ParseLevel(level)
+	if err != nil {
+		panic(err)
+	}
+
+	u.Logger = u.Level(l)
+	return u
 }
 
 func (u *Ulog) Debug() *event {
