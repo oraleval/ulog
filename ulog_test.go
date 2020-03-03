@@ -32,11 +32,12 @@ func TestUlog_ID(t *testing.T) {
 
 // 子日志功能example
 func Test_sublogger(t *testing.T) {
-	l := New(AddWriter(os.Stdout))
+	l := New(os.Stdout)
 
 	l.SetLevel("info")
 
 	l2 := l.With().Str("hostName", "bj01").Str("serverName", "eval01").Logger()
+
 	l2.Error().Msg("print error")
 	l2.Info().Msg("print info")
 	l2.Debug().Msg("print debug")

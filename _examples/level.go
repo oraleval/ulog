@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	u := ulog.New(ulog.AddWriter(os.Stdout))
+	u := ulog.New(os.Stdout)
 	u.Logger = u.Level(zerolog.InfoLevel)
 
 	u.Debug().Msg("hello")

@@ -13,15 +13,8 @@ type Ulog struct {
 }
 
 // 初始化函数
-func New(o ...Option) *Ulog {
-	options := uOptions{}
-	for _, opt := range o {
-		opt.apply(&options)
-	}
-
-	return &Ulog{Logger: zerolog.New(io.MultiWriter(options.w...)).With().Timestamp().
-		Str("hostName", options.hostName).
-		Str("serverName", options.serverName).
+func New(w ...io.Writer) *Ulog {
+	return &Ulog{Logger: zerolog.New(io.MultiWriter(w...)).With().Timestamp().
 		Logger()}
 }
 
