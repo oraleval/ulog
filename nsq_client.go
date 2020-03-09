@@ -44,7 +44,7 @@ func NewNsqClient(topic, channel, nsqLookupAddr string) *nsqClient {
 // write接口
 func (q *nsqClient) Write(p []byte) (n int, err error) {
 	select {
-	case q.message <- p:
+	case q.message <- append([]byte(nil), p...):
 		return len(p), nil
 	default:
 	}
