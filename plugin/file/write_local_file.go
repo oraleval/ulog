@@ -1,4 +1,4 @@
-package ulog
+package file
 
 import (
 	"compress/gzip"

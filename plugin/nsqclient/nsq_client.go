@@ -1,4 +1,4 @@
-package ulog
+package nsqclient
 
 import (
 	"errors"

@@ -1,11 +1,13 @@
-package ulog
+package nsqclient
 
 import (
 	"bytes"
 	"context"
 	"fmt"
 	"github.com/nsqio/go-nsq"
+	"github.com/oraleval/ulog"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 	"time"
 	"unsafe"
@@ -171,4 +173,30 @@ func TestNsqClient_Del(t *testing.T) {
 	newN := countAddr(c.nsqNodeAddr)
 	fmt.Printf("old nsq number(%d), new nsq number(%d)\n", oldN, newN)
 	assert.NotEqual(t, oldN, newN)
+}
+
+func TestNsqClient_Write2(t *testing.T) {
+	nsqClient := NewNsqClient("ai-service", "eval", "192.168.6.100:4161")
+	if nsqClient == nil {
+		fmt.Printf("new nsql client fail\n")
+		return
+	}
+
+	//time.Sleep(time.Second)
+
+	//w := NewLogFilter(io.Writer(nsqClient))
+	l := ulog.New(nsqClient, os.Stdout).SetLevel("info")
+	l1 := l.With().Str("hostName", "bj01").Str("serverName", "eval01").Logger()
+	l1.Info().Msgf("test")
+	l1.Error().Msgf("test")
+
+	l2 := l.With().Str("hostName", "bj01").Str("serverName", "eval01").Str("requestID", "requestIDTest").Str("globalID", "test1").Logger()
+	//l2.Error().Msg("print1 error")
+	l2.Info().Msg("print1 info")
+	l2.Error().Msg("print1 error")
+	l2.Info().Msg("print2 info")
+	l2.Info().Msg("print3 info")
+	l2.Error().Msg("print2 error")
+
+	time.Sleep(time.Second)
 }
