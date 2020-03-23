@@ -5,6 +5,8 @@ import (
 	"github.com/rs/zerolog"
 	"io"
 	"runtime"
+	"time"
+
 	//"github.com/rs/zerolog/log"
 )
 
@@ -14,8 +16,8 @@ type Ulog struct {
 
 // 初始化函数
 func New(w ...io.Writer) *Ulog {
-	return &Ulog{Logger: zerolog.New(io.MultiWriter(w...)).With().Timestamp().
-		Logger()}
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+	return &Ulog{Logger: zerolog.New(io.MultiWriter(w...)).With().Timestamp().Logger()}
 }
 
 // 设置日志等级
