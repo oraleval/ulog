@@ -79,7 +79,7 @@ func (f *LogFilter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (f *LogFilter) SendOut(globalID string, p []byte, tmp bool) (err error) {
+func (f *LogFilter) SendOut(globalID string, p []byte, isError bool) (err error) {
 	logBlack.Delete(globalID)
 	time.Sleep(time.Second)
 	newList, err := f.GetLogCache(globalID)
@@ -90,7 +90,7 @@ func (f *LogFilter) SendOut(globalID string, p []byte, tmp bool) (err error) {
 	if err != nil {
 		log.Printf("DeleteLogCache err (%v)\n", err)
 	}
-	if len(newList) > 0 && tmp {
+	if len(newList) > 0 && isError {
 		for _, n := range newList {
 			_, err := f.W.Write(n)
 			if err != nil {
