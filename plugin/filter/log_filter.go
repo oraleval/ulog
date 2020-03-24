@@ -6,7 +6,7 @@ import (
 	"github.com/xujiajun/nutsdb"
 	"io"
 	"log"
-	"strings"
+	"os"
 	"sync"
 	"time"
 )
@@ -15,12 +15,6 @@ var (
 	logBlack = sync.Map{}
 	DBBucket = "logBucket"
 )
-
-type LogData struct {
-	RequestID string `json:"requestID"`
-	GlobalID  string `json:"globalID"`
-	Level     string `json:"level"`
-}
 
 type LogCacheData struct {
 	IsError bool
@@ -32,12 +26,12 @@ type LogFilter struct {
 	TW *timewheel.TimeWheel
 }
 
-func NewLogFilter(w io.Writer, file string) *LogFilter {
+func NewLogFilter(w io.Writer, dir string) *LogFilter {
 	l := &LogFilter{W: w}
 
-	//_ = os.RemoveAll(file)
+	_ = os.RemoveAll(dir)
 	opt := nutsdb.DefaultOptions
-	opt.Dir = file
+	opt.Dir = dir
 	db, err := nutsdb.Open(opt)
 	if err != nil {
 		log.Printf("new nutsdb err:%v\n", err)
@@ -54,10 +48,11 @@ func NewLogFilter(w io.Writer, file string) *LogFilter {
 func (f *LogFilter) Write(p []byte) (n int, err error) {
 	level := gjson.Get(string(p), "level").String()
 	globalID := gjson.Get(string(p), "globalID").String()
+	end := gjson.Get(string(p), "end").Bool()
 	if globalID != "" {
-		tmp, isGlobalID := logBlack.Load(globalID)
-		if strings.LastIndex(string(p), "end") > 0 {
-			err := f.SendOut(globalID, p, tmp)
+		globalBool, isGlobalID := logBlack.Load(globalID)
+		if end {
+			err := f.SendOut(globalID, p, globalBool.(bool))
 			if err != nil {
 				log.Printf("NewLogFilter SendOut err (%v)\n", err)
 				return len(p), err
@@ -84,7 +79,7 @@ func (f *LogFilter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (f *LogFilter) SendOut(globalID string, p []byte, tmp interface{}) (err error) {
+func (f *LogFilter) SendOut(globalID string, p []byte, tmp bool) (err error) {
 	logBlack.Delete(globalID)
 	time.Sleep(time.Second)
 	newList, err := f.GetLogCache(globalID)
@@ -95,7 +90,7 @@ func (f *LogFilter) SendOut(globalID string, p []byte, tmp interface{}) (err err
 	if err != nil {
 		log.Printf("DeleteLogCache err (%v)\n", err)
 	}
-	if len(newList) > 0 && tmp.(bool) {
+	if len(newList) > 0 && tmp {
 		for _, n := range newList {
 			_, err := f.W.Write(n)
 			if err != nil {
@@ -145,7 +140,7 @@ func (f *LogFilter) DeleteLogCache(globalID string) error {
 				for _, n := range items {
 					err := tx.SRem(DBBucket, key, n)
 					if err != nil {
-						return err
+						log.Printf("DeleteLogCache SRem key (%s) err (%v)\n", key, err)
 					}
 				}
 			}
