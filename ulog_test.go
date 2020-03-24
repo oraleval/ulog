@@ -34,7 +34,7 @@ func TestUlog_ID(t *testing.T) {
 func Test_sublogger(t *testing.T) {
 	l := New(os.Stdout)
 
-	l.SetLevel("info")
+	l.SetLevel("error")
 
 	l2 := l.With().Str("hostName", "bj01").Str("serverName", "eval01").Logger()
 
