@@ -126,7 +126,7 @@ func (q *nsqClient) updateNsqdAddr(once bool) {
 			atomic.AddInt32(&q.curMaxIndex, int32(len(newAddr)))
 		}
 
-		log.Printf("nsqd address:%v\n", addrs)
+		//log.Printf("nsqd address:%v\n", addrs)
 		//atomic.StorePointer(&q.nsqNodeAddr, unsafe.Pointer(&addrs))
 		if once { //此判断用于测试
 			break
