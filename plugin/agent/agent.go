@@ -56,7 +56,7 @@ func (a *Agent) poll() {
 			atomic.CompareAndSwapInt32(&a.running, 0, 1)
 			for d := range a.data {
 				var r resp
-				err := gout.POST(a.agentAddr + "/log-agent").Debug(true).SetBody(d).BindJSON(&r).Do()
+				err := gout.POST(a.agentAddr + "/log-agent").SetBody(d).BindJSON(&r).Do()
 				if err != nil {
 					fmt.Printf("err:%s\n", err)
 				}
