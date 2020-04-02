@@ -3,8 +3,7 @@ module github.com/oraleval/ulog
 go 1.13
 
 require (
-	github.com/guonaihong/gout v0.0.9
-	github.com/guonaihong/gutil v0.0.0-20181005081028-c7f48b533961 // indirect
+	github.com/guonaihong/gout v0.0.10
 	github.com/nsqio/go-nsq v1.0.8
 	github.com/ouqiang/timewheel v1.0.1
 	github.com/rs/zerolog v1.15.0
