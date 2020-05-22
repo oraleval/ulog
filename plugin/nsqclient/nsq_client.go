@@ -205,8 +205,8 @@ func (q *nsqClient) getProducer(index *int) *nsq.Producer {
 	// 最多重试100次
 	for i := 0; i < 100; i++ {
 		curMaxIndex := atomic.LoadInt32(&q.curMaxIndex)
-		if curMaxIndex > len(q.nsqNodeAddr) {
-			curMaxIndex = len(q.nsqNodeAddr)
+		if curMaxIndex > int32(len(q.nsqNodeAddr)) {
+			curMaxIndex = int32(len(q.nsqNodeAddr))
 		}
 
 		idx = atomic.AddInt64(&q.id, 1) % int64(curMaxIndex)
