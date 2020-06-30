@@ -13,7 +13,7 @@ import (
 // Test_LogFilter
 func Test_LogFilter(t *testing.T) {
 	var w []io.Writer
-	client := nsqclient.NewNsqClient("ai-service", "eval", "192.168.6.100:4161")
+	client := nsqclient.NewNsqClient("ai-service", "eval", "192.168.6.100:4161", 10000)
 	if client == nil {
 		fmt.Printf("new nsql client fail\n")
 		return

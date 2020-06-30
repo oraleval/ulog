@@ -28,12 +28,12 @@ type nsqClient struct {
 }
 
 // nsq客户端初始化函数
-func NewNsqClient(topic, channel, nsqLookupAddr string) *nsqClient {
+func NewNsqClient(topic, channel, nsqLookupAddr string, maxMessage int) *nsqClient {
 	n := &nsqClient{
 		topic:         topic,
 		channel:       channel,
 		nsqLookupAddr: nsqLookupAddr,
-		message:       make(chan []byte, 10000),
+		message:       make(chan []byte, maxMessage),
 		nsqNodeAddr:   make([]unsafe.Pointer, 10), // 默认最多10个nsqd
 	}
 

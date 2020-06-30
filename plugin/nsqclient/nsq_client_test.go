@@ -76,7 +76,7 @@ func nsqMockServer(ctx context.Context, out chan []byte) error {
 
 // 测试读写
 func TestNsqClient_Write(t *testing.T) {
-	c := NewNsqClient("my-test-topic", "my-test-channel", nsqLookUpAddr)
+	c := NewNsqClient("my-test-topic", "my-test-channel", nsqLookUpAddr, 10000)
 	need := [][]byte{
 		[]byte("test 1 message"),
 		[]byte("test 2 message"),
@@ -176,7 +176,7 @@ func TestNsqClient_Del(t *testing.T) {
 }
 
 func TestNsqClient_Write2(t *testing.T) {
-	nsqClient := NewNsqClient("ai-service", "eval", "192.168.6.100:4161")
+	nsqClient := NewNsqClient("ai-service", "eval", "192.168.6.100:4161", 10000)
 	if nsqClient == nil {
 		fmt.Printf("new nsql client fail\n")
 		return
